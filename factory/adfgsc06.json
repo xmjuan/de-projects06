@@ -1,0 +1,9 @@
+{
+	"name": "adfgsc06",
+	"location": "westeurope",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "cd24b7c6-83a2-4365-b41e-a0128ed6569f",
+		"tenantId": "058ec02b-7394-4cc3-b1d6-3b7a54334e18"
+	}
+}
