@@ -1,0 +1,92 @@
+CREATE SCHEMA config
+GO
+CREATE TABLE [config].[tbl_newdatasource]
+(sourceId int identity(1,1),
+sourceSchema varchar(50) null,
+sourceTable varchar(50) null,
+destinationContainer varchar(50) null,
+destinationFolder varchar(50) null,
+destinationFile varchar(50) null,
+sourceScript varchar(max) null,
+isIncremental bit,
+lastUpdated datetime null,
+sourceType varchar(50) null,
+isFiltered bit)
+
+GO
+INSERT INTO [config].[tbl_newdatasource]
+(sourceSchema,
+sourceTable,
+destinationContainer,
+destinationFolder,
+destinationFile,
+sourceScript,
+isIncremental,
+lastUpdated,
+sourceType,
+isFiltered)
+VALUES('dbo',
+'ProductDetails',
+'raw',
+'ProductDetails',
+'Product.csv',
+'SELECT 
+id,
+ProductName,
+ProductType,
+LastUpdated,
+''Samsung'' as Brand
+FROM [dbo].[ProductDetails]',
+1,
+'2023-01-14 19:00:00',
+'Products',
+1),
+('dbo',
+'ItemDetails',
+'raw',
+'ItemDetails',
+'Item.csv',
+'SELECT 
+id,
+ProductName,
+ProductType,
+LastUpdated
+FROM [dbo].[ItemDetails]',
+0,
+'2023-01-14 18:00:00',
+'Items',
+0),
+('dbo',
+'EmployeeDetails',
+'raw',
+'EmployeeDetails',
+'Employee.csv',
+'SELECT 
+id,
+FirstName,
+LastName,
+Age,
+PhoneNumber as Tel,
+Updated
+FROM [dbo].[EmployeeDetails]',
+1,
+'2023-01-14 19:00:00',
+'Employees',
+1),
+('dbo',
+'CustomerDetails',
+'raw',
+'CustomerDetails',
+'Customer.csv',
+'SELECT 
+id,
+FirstName,
+LastName,
+Age,
+PhoneNumber,
+Updated
+FROM [dbo].[CustomerDetails]',
+0,
+'2023-01-17 19:00:00',
+'Customers',
+0)
