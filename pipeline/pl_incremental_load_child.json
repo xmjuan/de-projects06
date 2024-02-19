@@ -1,5 +1,5 @@
 {
-	"name": "pl_incremental_load",
+	"name": "pl_incremental_load_child",
 	"properties": {
 		"activities": [
 			{
@@ -18,7 +18,7 @@
 					"source": {
 						"type": "AzureSqlSource",
 						"sqlReaderQuery": {
-							"value": "SELECT * FROM config.tbl_newdatasource\nWHERE sourceTable = ",
+							"value": "SELECT * FROM config.tbl_newdatasource\nWHERE sourceTable = '@{pipeline().parameters.pTable}'\nand sourceSchema = '@{pipeline().parameters.pSchema}'",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
@@ -29,8 +29,173 @@
 						"type": "DatasetReference"
 					}
 				}
+			},
+			{
+				"name": "LookupNewWatermark",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT \nmax(@{pipeline().parameters.pWatermarkCol}) AS NewWatermark\nFROM \n@{pipeline().parameters.pTable}",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "ds_sqldb_source",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "CopyToRaw",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "LookupExistingWatermark",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "LookupNewWatermark",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT * FROM @{pipeline().parameters.pTable}\nWHERE \n@{pipeline().parameters.pWatermarkCol} > '@{activity('LookupExistingWatermark').output.firstRow.LastUpdated}'\nand\n@{pipeline().parameters.pWatermarkCol} <= '@{activity('LookupNewWatermark').output.firstRow.NewWatermark}'",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_sqldb_source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_destination",
+						"type": "DatasetReference",
+						"parameters": {
+							"pContainer": {
+								"value": "@activity('LookupExistingWatermark').output.firstRow.destinationContainer",
+								"type": "Expression"
+							},
+							"pFolder": {
+								"value": "@concat(\n    activity('LookupExistingWatermark').output.firstRow.destinationFolder,\n    '\\',\n    formatDateTime(utcnow(), 'yyyy-MM-dd'))",
+								"type": "Expression"
+							},
+							"pFile": {
+								"value": "@activity('LookupExistingWatermark').output.firstRow.destinationFile",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "UpdateWatermark",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "CopyToRaw",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_update_watermark]",
+					"storedProcedureParameters": {
+						"TableName": {
+							"value": {
+								"value": "@pipeline().parameters.pTable",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"Updated": {
+							"value": {
+								"value": "@pipeline().TriggerName",
+								"type": "Expression"
+							},
+							"type": "DateTime"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_sqldb",
+					"type": "LinkedServiceReference"
+				}
 			}
 		],
+		"parameters": {
+			"pTable": {
+				"type": "string"
+			},
+			"pWatermarkCol": {
+				"type": "string"
+			},
+			"pSchema": {
+				"type": "string"
+			}
+		},
 		"annotations": [],
 		"lastPublishTime": "2024-02-18T20:46:59Z"
 	},
