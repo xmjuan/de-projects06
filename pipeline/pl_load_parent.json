@@ -71,7 +71,7 @@
 										"userProperties": [],
 										"typeProperties": {
 											"pipeline": {
-												"referenceName": "pl_full_load_child",
+												"referenceName": "pl_full_load_parent",
 												"type": "PipelineReference"
 											},
 											"waitOnCompletion": true
@@ -89,20 +89,10 @@
 										"userProperties": [],
 										"typeProperties": {
 											"pipeline": {
-												"referenceName": "pl_incremental_child",
+												"referenceName": "pl_incremental_load_parent",
 												"type": "PipelineReference"
 											},
-											"waitOnCompletion": true,
-											"parameters": {
-												"pTable": {
-													"value": "@activity('LookupMeta').output.sourceTable",
-													"type": "Expression"
-												},
-												"pWatermarkColumn": {
-													"value": "@activity('LookupMeta').output.lastUpdated",
-													"type": "Expression"
-												}
-											}
+											"waitOnCompletion": true
 										}
 									}
 								]
