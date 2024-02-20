@@ -1,9 +1,9 @@
 {
-	"name": "pl_full_load",
+	"name": "pl_full_load_parent",
 	"properties": {
 		"activities": [
 			{
-				"name": "LookupMetadata",
+				"name": "LookupMeta",
 				"type": "Lookup",
 				"dependsOn": [],
 				"policy": {
@@ -32,11 +32,11 @@
 				}
 			},
 			{
-				"name": "ForEachMetadata",
+				"name": "ForEachMeta",
 				"type": "ForEach",
 				"dependsOn": [
 					{
-						"activity": "LookupMetadata",
+						"activity": "LookupMeta",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -45,7 +45,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@activity('LookupMetadata').output.value",
+						"value": "@activity('LookupMeta').output.value",
 						"type": "Expression"
 					},
 					"isSequential": true,
