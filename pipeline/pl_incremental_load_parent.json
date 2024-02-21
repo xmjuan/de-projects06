@@ -45,7 +45,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@activity('LookupExsitingWatermark').output.value",
+						"value": "@activity('LookupMetadata').output.value",
 						"type": "Expression"
 					},
 					"isSequential": true,
@@ -70,7 +70,7 @@
 										"type": "Expression"
 									},
 									"pWatermarkColumn": {
-										"value": "@item().lastUpdated",
+										"value": "@item().watermarkColumn",
 										"type": "Expression"
 									}
 								}
